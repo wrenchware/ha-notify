@@ -1,0 +1,15 @@
+**/bin/
+**/obj/
+dist/
+staging/
+staging-winui/
+*.user
+/.vs/
+/.codex/
+/.agents/
+/Screenshot*.png
+**/connection.dat*
+.env
+.env.*
+*.pfx
+*.p12
