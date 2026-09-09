@@ -1,6 +1,9 @@
-The Home Assistant logo is from the official asset pack:
-https://github.com/home-assistant/assets/tree/master/logo
+# Logo
 
-Source: home-assistant-logo.zip / home-assistant-logomark-color-on-light.png
-Retrieved September 9, 2026. Stored as home-assistant.png.
-Build-Icon.ps1 generates the Windows ICO sizes and UI PNG from this logo.
+`home-assistant.png` is `home-assistant-logomark-color-on-light.png` from the [Home Assistant logo pack](https://github.com/home-assistant/assets/tree/master/logo).
+
+To regenerate `ha-notify.ico` and `ha-notify.png` from the source image, run from the repository root:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Build-Icon.ps1
+```
