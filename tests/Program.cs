@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using HaNotify;
 
+await UpdateChecks.RunAsync();
 using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(45));
 var probe = new TcpListener(IPAddress.Loopback, 0);
 probe.Start();

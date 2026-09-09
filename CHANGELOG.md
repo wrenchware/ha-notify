@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+
+- Checks for updates automatically and from settings.
+- Shows the current and new version before downloading an update.
+- Installer closes and reopens the running app, preserving connection settings.
+
 ## 0.1.1
 
 - Added an EXE installer with bundled runtimes, shortcuts, and uninstall support.

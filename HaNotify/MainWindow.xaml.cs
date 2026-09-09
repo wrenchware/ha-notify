@@ -44,6 +44,7 @@ public sealed partial class MainWindow : Window
         Root.ActualThemeChanged += (_, _) => ApplyTheme();
         ApplyTheme();
         Device.Text = Environment.MachineName;
+        InitializeUpdates();
         if (preview)
         {
             Device.Text = "Office PC";

@@ -46,6 +46,14 @@
                         <ToggleSwitch x:Name="Startup" Grid.Column="1" OnContent="" OffContent="" MinWidth="0" VerticalAlignment="Center" AutomationProperties.Name="Start when I sign in to Windows" Toggled="Startup_Toggled" />
                     </Grid>
                 </Border>
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                    <StackPanel Spacing="4" VerticalAlignment="Center">
+                        <TextBlock x:Name="VersionText" Style="{ThemeResource CaptionTextBlockStyle}" />
+                        <TextBlock x:Name="UpdateStatus" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
+                    </StackPanel>
+                    <Button x:Name="UpdateButton" Grid.Column="1" Content="Check for updates" Click="Update_Click" VerticalAlignment="Center" />
+                </Grid>
                 <Grid ColumnSpacing="10" Margin="4,0">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="14" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                     <FontIcon Glyph="&#xE946;" FontSize="14" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Top" Margin="0,3,0,0" />

@@ -6,7 +6,11 @@ Home Assistant notifications for Windows 11. Runs in the system tray and follows
 
 Download the EXE installer from [Releases](https://github.com/wrenchware/ha-notify/releases/latest). It includes the required runtimes and installs for your Windows account.
 
-Close HA Notify from its tray menu before installing an update. Saved connection settings are preserved.
+The installer shows the version change, closes HA Notify during an update, and reopens it afterward. Saved connection settings are preserved.
+
+## Updates
+
+HA Notify checks GitHub for updates at startup and every six hours. You can also select **Check for updates** in settings. Updates are downloaded only after you confirm the version change.
 
 ## Screenshots
 
