@@ -16,6 +16,10 @@
     <Version>0.1.2</Version>
     <ApplicationIcon>Assets\ha-notify.ico</ApplicationIcon>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
     <Content Include="Assets\ha-notify.ico" CopyToOutputDirectory="PreserveNewest" />

@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path $PSScriptRoot -Parent
 if (-not (Test-Path -LiteralPath $IsccPath)) { throw 'Install Inno Setup 6 or pass -IsccPath with the path to ISCC.exe.' }
 [xml]$project = Get-Content -LiteralPath (Join-Path $repoRoot 'HaNotify\HaNotify.csproj')
-$version = $project.Project.PropertyGroup.Version
+$version = $project.SelectSingleNode('/Project/PropertyGroup/Version').InnerText
 $releaseDir = Join-Path $repoRoot "artifacts\$version"
 $publishDir = Join-Path $releaseDir ('app-' + [Guid]::NewGuid().ToString('N'))
 & dotnet publish (Join-Path $repoRoot 'HaNotify\HaNotify.csproj') -c Release -o $publishDir --self-contained true --nologo
