@@ -20,7 +20,7 @@ internal sealed class HaConnection
         var id = Guid.NewGuid().ToString("N");
         using var response = await client.PostAsJsonAsync("api/mobile_app/registrations", new
         {
-            device_id = id, app_id = "personal.ha_notify.windows", app_name = "HA Notify", app_version = "0.1.0",
+            device_id = id, app_id = "personal.ha_notify.windows", app_name = "HA Notify", app_version = "0.1.1",
             device_name = name, manufacturer = "Personal", model = "Windows PC", os_name = "Windows",
             os_version = Environment.OSVersion.Version.ToString(), supports_encryption = false,
             app_data = new { push_websocket_channel = true }

@@ -1,17 +1,20 @@
 # HA Notify
 
-Home Assistant notifications for Windows 11. Runs in the system tray, follows your Windows theme, and reconnects automatically when Home Assistant restarts.
+Home Assistant notifications for Windows 11. Runs in the system tray and follows your Windows theme.
 
-## Build and run
+## Install
 
-Requires Windows 11 (x64) and the .NET 10 SDK. From the repository folder:
+Download the EXE installer from [Releases](https://github.com/wrenchware/ha-notify/releases/latest). It includes the required runtimes and installs for your Windows account.
 
-```powershell
-dotnet publish .\HaNotify\HaNotify.csproj -c Release -o .\dist --self-contained true
-.\dist\HaNotify.exe
-```
+Close HA Notify from its tray menu before installing an update. Saved connection settings are preserved.
 
-Keep the entire `dist` folder together. Run the app as a normal user, not as administrator.
+## Screenshots
+
+| Light | Dark |
+| --- | --- |
+| <img src="docs/images/settings-light.png" alt="HA Notify settings in light mode" width="320"> | <img src="docs/images/settings-dark.png" alt="HA Notify settings in dark mode" width="320"> |
+
+<img src="docs/images/notification.png" alt="Home Assistant notification on Windows 11" width="400">
 
 ## Setup
 
@@ -39,20 +42,38 @@ Use the same action in automations and scripts. If it is missing after setup, re
 
 - Close the window to keep listening in the tray. Use the tray menu to exit.
 - Enable **Start with Windows** to launch at sign-in. Keep the app folder at the same path afterward.
+- Automatically reconnects if the connection is interrupted.
 - The PC must be awake, the app running, and Home Assistant reachable. Missed notifications are not queued.
 - Supports titles and text. Images and action buttons are not supported yet.
 - Notifications appear as **Home Assistant** in Windows. Check Windows notification settings and Do Not Disturb if banners do not appear.
 - Connection details are encrypted for your Windows account and stored in `%LOCALAPPDATA%\HaNotify\connection.dat`. Use HTTPS for remote connections.
 - Changing the server or device name creates a new HA registration. Remove unused devices from the Mobile App integration.
 
+## Build from source
+
+Requires Windows 11 (x64) and the .NET 10 SDK. From the repository folder:
+
+```powershell
+dotnet publish .\HaNotify\HaNotify.csproj -c Release -o .\dist --self-contained true
+.\dist\HaNotify.exe
+```
+
+Keep the entire `dist` folder together. Run the app as a normal user, not as administrator.
+
 ## Development
 
-Built with C# and WinUI 3. Run the connection and restart tests with:
+Built with C# and WinUI 3. Run the connection tests with:
 
 ```powershell
 dotnet run --project .\tests\ProtocolChecks.csproj -c Release
 ```
 
 `HaNotify.exe --preview` saves light, dark, and narrow-window previews without connecting to Home Assistant.
+
+Build the EXE installer with Inno Setup 6 installed:
+
+```powershell
+.\tools\Build-Installer.ps1
+```
 
 Logo from the [Home Assistant asset pack](HaNotify/Assets/README.md).

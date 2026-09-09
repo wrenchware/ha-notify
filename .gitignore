@@ -13,3 +13,4 @@ staging-winui/
 .env.*
 *.pfx
 *.p12
+/artifacts/

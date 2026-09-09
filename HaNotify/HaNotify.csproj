@@ -13,7 +13,7 @@
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <AssemblyName>HaNotify</AssemblyName>
     <Product>HA Notify</Product>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <ApplicationIcon>Assets\ha-notify.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
@@ -21,6 +21,7 @@
     <Content Include="Assets\ha-notify.ico" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\ha-notify.png" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\home-assistant.png" CopyToOutputDirectory="PreserveNewest" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260710003" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="1.8.260709004" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.Runtime" Version="1.8.260710003" />
   </ItemGroup>
 </Project>

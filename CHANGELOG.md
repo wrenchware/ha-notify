@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- Added an EXE installer with bundled runtimes, shortcuts, and uninstall support.
+
 ## 0.1.0
 
 Initial release.
