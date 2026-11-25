@@ -42,13 +42,52 @@ data:
 
 Use the same action in automations and scripts. If it is missing after setup, reload the Mobile App integration or restart Home Assistant.
 
+## Buttons, links, and tags
+
+These `data` keys work the same way as in the Android companion app, so one automation can target your phone and this PC:
+
+| Key | What it does |
+| --- | --- |
+| `actions` | Up to 5 buttons. `action: URI` with an `http` or `https` `uri` opens that link. Any other `action` sends an event to Home Assistant. |
+| `clickAction` or `url` | An `http` or `https` link to open when the notification is clicked. Without one, clicking opens HA Notify. |
+| `tag` | A new notification with the same tag replaces the old one. |
+| `group` | Optional. Used with `tag` to tell notifications apart. |
+
+```yaml
+action: notify.mobile_app_office_pc
+data:
+  title: "Water filter"
+  message: "Time to order a new filter."
+  data:
+    tag: "water-filter"
+    clickAction: "https://example.com/filters"
+    actions:
+      - action: "URI"
+        title: "View product"
+        uri: "https://example.com/filters/123"
+      - action: "FILTER_ORDERED"
+        title: "Ordered"
+```
+
+Custom actions arrive in Home Assistant as `mobile_app_notification_action` events, with `action` and, when available, `tag`, `title`, and `message`. To check them, listen to that event type under **Developer Tools → Events**. Very long notifications may leave out `title` and `message` to fit the Windows size limit.
+
+To remove a notification, send `clear_notification` with its tag:
+
+```yaml
+action: notify.mobile_app_office_pc
+data:
+  message: "clear_notification"
+  data:
+    tag: "water-filter"
+```
+
 ## Notes
 
 - Close the window to keep listening in the tray. Use the tray menu to exit.
 - Enable **Start with Windows** to launch at sign-in. Keep the app folder at the same path afterward.
 - Automatically reconnects if the connection is interrupted.
 - The PC must be awake, the app running, and Home Assistant reachable. Missed notifications are not queued.
-- Supports titles and text. Images and action buttons are not supported yet.
+- Supports titles, text, [buttons, links, and tags](#buttons-links-and-tags). Images are not supported yet.
 - Notifications appear as **Home Assistant** in Windows. Check Windows notification settings and Do Not Disturb if banners do not appear.
 - Connection details are encrypted for your Windows account and stored in `%LOCALAPPDATA%\HaNotify\connection.dat`. Use HTTPS for remote connections.
 - Changing the server or device name creates a new HA registration. Remove unused devices from the Mobile App integration.

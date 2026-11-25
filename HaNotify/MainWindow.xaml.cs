@@ -4,7 +4,6 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
 using Microsoft.Windows.AppNotifications;
-using Microsoft.Windows.AppNotifications.Builder;
 using Microsoft.Win32;
 using Forms = System.Windows.Forms;
 
@@ -37,9 +36,10 @@ public sealed partial class MainWindow : Window
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(TitleRegion);
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "ha-notify.ico"));
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(680, 880));
         var area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary).WorkArea;
-        AppWindow.Move(new Windows.Graphics.PointInt32(area.X + Math.Max(0, (area.Width - 680) / 2), area.Y + Math.Max(0, (area.Height - 880) / 2)));
+        var height = Math.Min(960, area.Height);
+        AppWindow.Resize(new Windows.Graphics.SizeInt32(680, height));
+        AppWindow.Move(new Windows.Graphics.PointInt32(area.X + Math.Max(0, (area.Width - 680) / 2), area.Y + Math.Max(0, (area.Height - height) / 2)));
         if (MicaController.IsSupported()) SystemBackdrop = new MicaBackdrop();
         Root.ActualThemeChanged += (_, _) => ApplyTheme();
         ApplyTheme();
@@ -69,7 +69,7 @@ public sealed partial class MainWindow : Window
         try
         {
             saved = Settings.Load();
-            if (saved != null) { Address.Text = saved.Url; Token.Password = saved.Token; Device.Text = saved.Name; }
+            if (saved != null) { Address.Text = saved.Url; Token.Password = saved.Token; Device.Text = saved.Name; ProxyMode.SelectedIndex = saved.BypassProxy ? 1 : 0; }
         }
         catch { SetStatus("Saved connection could not be read. Enter your connection again."); }
         using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run"))
@@ -101,7 +101,6 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private void OnNotificationInvoked(AppNotificationManager sender, AppNotificationActivatedEventArgs args) => Ui(Restore);
     private void Restore() { AppWindow.Show(); if (AppWindow.Presenter is OverlappedPresenter p) p.Restore(); Activate(); }
     private void Ui(Action action) => DispatcherQueue.TryEnqueue(() => { if (!closed) action(); });
     private void SetStatus(string message)
@@ -113,19 +112,6 @@ public sealed partial class MainWindow : Window
         if (tray != null) tray.Text = connected ? "HA Notify • Connected" : "HA Notify • " + (message.Length > 45 ? message[..45] : message);
     }
     private void ShowDelivery(string message) { DeliveryStatus.Text = message; DeliveryStatus.Visibility = Visibility.Visible; }
-    private void Test_Click(object sender, RoutedEventArgs e) => ShowNotification("Home Assistant", "Your Windows notifications are ready.", true);
-    private void ShowNotification(string title, string message, bool test = false)
-    {
-        try
-        {
-            if (!notificationsRegistered) throw new InvalidOperationException("Restart the app to initialize notifications.");
-            var notification = new AppNotificationBuilder().AddText(title).AddText(message).BuildNotification();
-            AppNotificationManager.Default.Show(notification);
-            ShowDelivery(notification.Id == 0 ? "Windows did not accept the notification. Check notification settings." :
-                test ? "Test sent to Windows. This checks Windows notifications only." : $"Last notification received at {DateTime.Now:t}.");
-        }
-        catch (Exception ex) { ShowDelivery("Windows notification failed: " + ex.Message); }
-    }
 
     private async void Connect_Click(object sender, RoutedEventArgs e)
     {
@@ -137,9 +123,10 @@ public sealed partial class MainWindow : Window
             var url = Address.Text.Trim().TrimEnd('/') + "/";
             var newToken = Token.Password.Trim();
             var name = Device.Text.Trim();
+            var bypassProxy = ProxyMode.SelectedIndex == 1;
             var next = saved != null && saved.Url == url && saved.Name == name
-                ? saved with { Token = !string.IsNullOrWhiteSpace(newToken) ? newToken : throw new InvalidOperationException("Enter an access token.") }
-                : await HaConnection.RegisterAsync(url, newToken, name);
+                ? saved with { Token = !string.IsNullOrWhiteSpace(newToken) ? newToken : throw new InvalidOperationException("Enter an access token."), BypassProxy = bypassProxy }
+                : await HaConnection.RegisterAsync(url, newToken, name, bypassProxy);
             next.Save();
             cancellation?.Cancel();
             if (listener != null) await listener;
@@ -153,7 +140,7 @@ public sealed partial class MainWindow : Window
     private void StartListener()
     {
         cancellation = new CancellationTokenSource();
-        listener = HaConnection.RunAsync(saved!, s => Ui(() => SetStatus(s)), (t, m) => Ui(() => ShowNotification(t, m)), cancellation.Token);
+        listener = HaConnection.RunAsync(saved!, s => Ui(() => SetStatus(s)), n => Ui(() => ReceiveNotification(n)), cancellation.Token);
     }
     private void Startup_Toggled(object sender, RoutedEventArgs e)
     {
@@ -177,7 +164,7 @@ public sealed partial class MainWindow : Window
         {
             foreach (var sample in new[] { (Dark: false, Width: 680, Name: "light"), (Dark: true, Width: 680, Name: "dark"), (Dark: true, Width: 520, Name: "narrow") })
             {
-                AppWindow.Resize(new Windows.Graphics.SizeInt32(sample.Width, 880));
+                AppWindow.Resize(new Windows.Graphics.SizeInt32(sample.Width, 960));
                 Root.RequestedTheme = sample.Dark ? ElementTheme.Dark : ElementTheme.Light;
                 await Task.Delay(350);
                 var position = PageContent.TransformToVisual(Root).TransformPoint(new Windows.Foundation.Point(0, 0));

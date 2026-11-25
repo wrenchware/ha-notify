@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace HaNotify;
 
-internal sealed record Settings(string Url, string Token, string Name, string DeviceId, string WebhookId)
+internal sealed record Settings(string Url, string Token, string Name, string DeviceId, string WebhookId, bool BypassProxy = false)
 {
     private static string Folder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HaNotify");
     private static string FileName => Path.Combine(Folder, "connection.dat");

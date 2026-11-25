@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Net.WebSockets;
@@ -7,7 +8,10 @@ namespace HaNotify;
 
 internal sealed class HaConnection
 {
-    public static async Task<Settings> RegisterAsync(string address, string token, string name)
+    private static HttpClientHandler CreateHttpHandler(bool bypassProxy) =>
+        new() { AllowAutoRedirect = false, UseProxy = !bypassProxy };
+
+    public static async Task<Settings> RegisterAsync(string address, string token, string name, bool bypassProxy = false)
     {
         if (!Uri.TryCreate(address.TrimEnd('/') + "/", UriKind.Absolute, out var uri) ||
             (uri.Scheme != "http" && uri.Scheme != "https") || !string.IsNullOrEmpty(uri.UserInfo) ||
@@ -15,12 +19,12 @@ internal sealed class HaConnection
             throw new InvalidOperationException("Enter a Home Assistant http:// or https:// address without a query or fragment.");
         if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(name))
             throw new InvalidOperationException("Enter an access token and device name.");
-        using var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { BaseAddress = uri, Timeout = TimeSpan.FromSeconds(25) };
+        using var client = new HttpClient(CreateHttpHandler(bypassProxy)) { BaseAddress = uri, Timeout = TimeSpan.FromSeconds(25) };
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var id = Guid.NewGuid().ToString("N");
         using var response = await client.PostAsJsonAsync("api/mobile_app/registrations", new
         {
-            device_id = id, app_id = "personal.ha_notify.windows", app_name = "HA Notify", app_version = "0.1.2",
+            device_id = id, app_id = "personal.ha_notify.windows", app_name = "HA Notify", app_version = AppUpdates.VersionLabel,
             device_name = name, manufacturer = "Personal", model = "Windows PC", os_name = "Windows",
             os_version = Environment.OSVersion.Version.ToString(), supports_encryption = false,
             app_data = new { push_websocket_channel = true }
@@ -28,10 +32,24 @@ internal sealed class HaConnection
         if (!response.IsSuccessStatusCode)
             throw new InvalidOperationException($"Registration failed (HTTP {(int)response.StatusCode}). Check the address, token, and that the mobile_app integration is enabled.");
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        return new Settings(uri.AbsoluteUri, token, name, id, json.RootElement.GetProperty("webhook_id").GetString()!);
+        return new Settings(uri.AbsoluteUri, token, name, id, json.RootElement.GetProperty("webhook_id").GetString()!, bypassProxy);
     }
 
-    public static async Task RunAsync(Settings settings, Action<string> status, Action<string, string> notify, CancellationToken ct)
+    // The webhook id is the credential, as in the companion apps. Errors never include the URL.
+    public static async Task SendActionAsync(Settings settings, string action, string? tag, string? title, string? message, CancellationToken ct = default)
+    {
+        var eventData = new Dictionary<string, string> { ["action"] = action };
+        if (tag != null) eventData["tag"] = tag;
+        if (title != null) eventData["title"] = title;
+        if (message != null) eventData["message"] = message;
+        var body = JsonSerializer.Serialize(new { type = "fire_event", data = new { event_type = "mobile_app_notification_action", event_data = eventData } });
+        using var client = new HttpClient(CreateHttpHandler(settings.BypassProxy)) { Timeout = TimeSpan.FromSeconds(10) };
+        using var content = new StringContent(body, System.Text.Encoding.UTF8, "application/json");
+        using var response = await client.PostAsync(new Uri(new Uri(settings.Url), "api/webhook/" + Uri.EscapeDataString(settings.WebhookId)), content, ct);
+        if (!response.IsSuccessStatusCode) throw new IOException($"Home Assistant returned HTTP {(int)response.StatusCode} for the action.");
+    }
+
+    public static async Task RunAsync(Settings settings, Action<string> status, Action<HaNotification> notify, CancellationToken ct)
     {
         var delay = 2;
         while (!ct.IsCancellationRequested)
@@ -42,11 +60,12 @@ internal sealed class HaConnection
                 using var socket = new ClientWebSocket();
                 socket.Options.KeepAliveInterval = TimeSpan.FromSeconds(20);
                 socket.Options.KeepAliveTimeout = TimeSpan.FromSeconds(20);
+                using var invoker = new HttpMessageInvoker(CreateHttpHandler(settings.BypassProxy));
                 var uri = new UriBuilder(new Uri(new Uri(settings.Url), "api/websocket"));
                 uri.Scheme = uri.Scheme == "https" ? "wss" : "ws";
                 using var handshake = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 handshake.CancelAfter(TimeSpan.FromSeconds(30));
-                await socket.ConnectAsync(uri.Uri, handshake.Token);
+                await socket.ConnectAsync(uri.Uri, invoker, handshake.Token);
                 using var hello = await ReceiveAsync(socket, handshake.Token);
                 if (hello.RootElement.GetProperty("type").GetString() != "auth_required") throw new IOException("Unexpected authentication response.");
                 await SendAsync(socket, new { type = "auth", access_token = settings.Token }, handshake.Token);
@@ -63,10 +82,9 @@ internal sealed class HaConnection
                 {
                     using var message = await ReceiveAsync(socket, ct);
                     var root = message.RootElement;
-                    if (root.GetProperty("type").GetString() != "event" || !root.TryGetProperty("event", out var payload)) continue;
-                    if (!payload.TryGetProperty("message", out var body) || body.ValueKind != JsonValueKind.String) continue;
-                    var title = payload.TryGetProperty("title", out var t) && t.ValueKind == JsonValueKind.String ? t.GetString() : "Home Assistant";
-                    notify(title ?? "Home Assistant", body.GetString()!);
+                    if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("type", out var type) || type.ValueKind != JsonValueKind.String ||
+                        type.GetString() != "event" || !root.TryGetProperty("event", out var payload)) continue;
+                    if (HaNotification.Parse(payload) is { } notification) notify(notification);
                 }
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { return; }

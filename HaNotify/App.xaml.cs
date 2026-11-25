@@ -25,7 +25,8 @@ public partial class App : Application
                 System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(SetCurrentProcessExplicitAppUserModelID("Personal.HaNotify.Notifications"));
             window = new MainWindow(preview);
             window.Closed += (_, _) => { instance?.ReleaseMutex(); instance?.Dispose(); instance = null; };
-            if (!arguments.Contains("--tray") || !window.HasConnection || preview) window.Activate();
+            var handledClick = !preview && window.HandleLaunchActivation();
+            if (preview || !window.HasConnection || !(arguments.Contains("--tray") || handledClick)) window.Activate();
         }
         catch (Exception ex)
         {

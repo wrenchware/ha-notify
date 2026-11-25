@@ -27,6 +27,10 @@
                         <PasswordBox x:Name="Token" Header="Access token" PlaceholderText="Paste your long-lived access token" PasswordRevealMode="Peek" />
                         <TextBlock Text="Create a token in your Home Assistant profile → Security." Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,-10,0,0" TextWrapping="Wrap" />
                         <TextBox x:Name="Device" Header="Device name" PlaceholderText="Office PC" />
+                        <ComboBox x:Name="ProxyMode" Header="Proxy" HorizontalAlignment="Stretch" SelectedIndex="0">
+                            <ComboBoxItem Content="Use system proxy" />
+                            <ComboBoxItem Content="No proxy" />
+                        </ComboBox>
                         <Grid ColumnSpacing="12" Margin="0,2,0,0">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                             <Button x:Name="ConnectButton" Content="Save &amp; connect" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Stretch" Height="40" Click="Connect_Click" />
